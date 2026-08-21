@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Section Management - SmartShed AI{% endblock %}
+{% block page_title %}Student Section Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Student Sections & Batches</h4>
+        <p class="text-muted small mb-0">Configure academic year, engineering branches, sections, and batch student counts.</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSectionModal">
+        <i class="bi bi-people-plus me-1"></i> Add Section
+    </button>
+</div>
+
+<!-- Sections Table Card -->
+<div class="custom-card">
+    <div class="card-header-custom">
+        <h5 class="card-title-custom">
+            <i class="bi bi-collection-fill text-primary"></i> Registered Student Sections ({{ sections|length }})
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Year</th>
+                        <th>Branch / Dept</th>
+                        <th>Section</th>
+                        <th>Student Strength</th>
+                        <th>Timetable Schedule</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sec in sections %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary fw-semibold border">
+                                    {{ sec.year }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ sec.branch }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary text-white px-2 py-1 fs-6">
+                                    {{ sec.section_name }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-people me-1"></i> {{ sec.student_strength }} Students
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('view_timetable', section_id=sec.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-table me-1"></i> View Schedule
+                                </a>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary me-1" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editSectionModal{{ sec.id }}">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <a href="{{ url_for('section_delete', id=sec.id) }}" 
+                                   class="btn btn-sm btn-outline-danger" 
+                                   onclick="return confirm('Are you sure you want to delete {{ sec.year }} {{ sec.branch }} {{ sec.section_name }}?');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+
+                        <!-- Edit Section Modal -->
+                        <div class="modal fade" id="editSectionModal{{ sec.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form method="POST" action="{{ url_for('section_edit', id=sec.id) }}">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">Edit Section: {{ sec.branch }} ({{ sec.section_name }})</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Academic Year <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" name="year" value="{{ sec.year }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Branch / Program <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" name="branch" value="{{ sec.branch }}" required>
+                                            </div>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                    <label class="form-label fw-semibold small">Section Name <span class="text-danger">*</span></label>
+                                                    <input type="text" class="form-control" name="section_name" value="{{ sec.section_name }}" required>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label fw-semibold small">Student Strength <span class="text-danger">*</span></label>
+                                                    <input type="number" class="form-control" name="student_strength" value="{{ sec.student_strength }}" min="1" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-people-x fs-1 d-block mb-2 text-secondary"></i>
+                                No student sections configured. Click "Add Section" or run database seeder.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Section Modal -->
+<div class="modal fade" id="addSectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('section_add') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Add New Student Section</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Academic Year <span class="text-danger">*</span></label>
+                        <select class="form-select" name="year" required>
+                            <option value="I Year">I Year</option>
+                            <option value="II Year">II Year</option>
+                            <option value="III Year" selected>III Year</option>
+                            <option value="IV Year">IV Year</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Branch / Discipline <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="branch" placeholder="e.g. CSE or AI & DS" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Section Identifier <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="section_name" placeholder="e.g. Sec-A" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Student Strength <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="student_strength" value="60" min="1" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Section</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

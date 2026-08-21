@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Management - SmartShed AI{% endblock %}
+{% block page_title %}Faculty Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Faculty Master & Availability</h4>
+        <p class="text-muted small mb-0">Manage teaching staff details and day-wise period availability constraints.</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFacultyModal">
+        <i class="bi bi-person-plus me-1"></i> Add Faculty
+    </button>
+</div>
+
+<!-- Faculty Table Card -->
+<div class="custom-card">
+    <div class="card-header-custom">
+        <h5 class="card-title-custom">
+            <i class="bi bi-people-fill text-primary"></i> Registered Faculty Members ({{ faculty|length }})
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#ID</th>
+                        <th>Faculty Name</th>
+                        <th>Department</th>
+                        <th>Email</th>
+                        <th>Availability Matrix</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fac in faculty %}
+                        <tr>
+                            <td class="text-muted fw-bold">#{{ fac.id }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ fac.name }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                    {{ fac.department }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-secondary small">{{ fac.email or 'N/A' }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('faculty_availability_edit', faculty_id=fac.id) }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-calendar-week me-1"></i> View/Edit Slots
+                                </a>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary me-1" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editFacultyModal{{ fac.id }}">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <a href="{{ url_for('faculty_delete', id=fac.id) }}" 
+                                   class="btn btn-sm btn-outline-danger" 
+                                   onclick="return confirm('Are you sure you want to delete {{ fac.name }}? This will remove related availability records.');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+
+                        <!-- Edit Faculty Modal -->
+                        <div class="modal fade" id="editFacultyModal{{ fac.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form method="POST" action="{{ url_for('faculty_edit', id=fac.id) }}">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">Edit Faculty: {{ fac.name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Full Name</label>
+                                                <input type="text" class="form-control" name="name" value="{{ fac.name }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Department</label>
+                                                <input type="text" class="form-control" name="department" value="{{ fac.department }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Email Address</label>
+                                                <input type="email" class="form-control" name="email" value="{{ fac.email or '' }}">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                                No faculty members found. Click "Add Faculty" or run seed script.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Faculty Modal -->
+<div class="modal fade" id="addFacultyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('faculty_add') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Add New Faculty Member</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" placeholder="e.g. Dr. Robert Smith" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Department <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="department" placeholder="e.g. Computer Science & Engineering" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Email Address</label>
+                        <input type="email" class="form-control" name="email" placeholder="e.g. robert.smith@college.edu">
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" id="initAvail" name="init_available" checked>
+                        <label class="form-check-label small fw-semibold" for="initAvail">
+                            Automatically initialize as available for all default periods
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Faculty Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

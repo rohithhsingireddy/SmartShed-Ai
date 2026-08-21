@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Classrooms & Labs - SmartShed AI{% endblock %}
+{% block page_title %}Classroom & Laboratory Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Classrooms & Laboratories</h4>
+        <p class="text-muted small mb-0">Manage teaching spaces, laboratory centers, and student seating capacities.</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addClassroomModal">
+        <i class="bi bi-building-add me-1"></i> Add Room / Lab
+    </button>
+</div>
+
+<!-- Classrooms Table Card -->
+<div class="custom-card">
+    <div class="card-header-custom">
+        <h5 class="card-title-custom">
+            <i class="bi bi-door-open-fill text-primary"></i> Registered Rooms & Facilities ({{ classrooms|length }})
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Room Number</th>
+                        <th>Type</th>
+                        <th>Student Capacity</th>
+                        <th>Building / Wing</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in classrooms %}
+                        <tr>
+                            <td>
+                                <span class="fw-bold text-dark fs-6">{{ room.room_number }}</span>
+                            </td>
+                            <td>
+                                {% if room.room_type == 'Lab' %}
+                                    <span class="badge bg-purple-subtle text-purple border" style="background-color: #faf5ff; color: #7e22ce; border-color: #e9d5ff;">
+                                        <i class="bi bi-motherboard me-1"></i> Specialized Lab
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                        <i class="bi bi-easel me-1"></i> Lecture Classroom
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border px-2 py-1">
+                                    <i class="bi bi-person-arms-up me-1"></i> {{ room.capacity }} Seats
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-secondary small">{{ room.building or 'Main Campus' }}</span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary me-1" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editClassroomModal{{ room.id }}">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <a href="{{ url_for('classroom_delete', id=room.id) }}" 
+                                   class="btn btn-sm btn-outline-danger" 
+                                   onclick="return confirm('Are you sure you want to delete Room {{ room.room_number }}?');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+
+                        <!-- Edit Classroom Modal -->
+                        <div class="modal fade" id="editClassroomModal{{ room.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form method="POST" action="{{ url_for('classroom_edit', id=room.id) }}">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">Edit Room: {{ room.room_number }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Room Number / Identifier <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" name="room_number" value="{{ room.room_number }}" required>
+                                            </div>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                    <label class="form-label fw-semibold small">Room Type</label>
+                                                    <select class="form-select" name="room_type">
+                                                        <option value="Classroom" {% if room.room_type == 'Classroom' %}selected{% endif %}>Classroom</option>
+                                                        <option value="Lab" {% if room.room_type == 'Lab' %}selected{% endif %}>Lab</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label fw-semibold small">Student Capacity <span class="text-danger">*</span></label>
+                                                    <input type="number" class="form-control" name="capacity" value="{{ room.capacity }}" min="1" required>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Building / Department Wing</label>
+                                                <input type="text" class="form-control" name="building" value="{{ room.building or '' }}">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-building-x fs-1 d-block mb-2 text-secondary"></i>
+                                No classrooms or labs configured. Click "Add Room / Lab" or run database seeder.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Classroom Modal -->
+<div class="modal fade" id="addClassroomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('classroom_add') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Add New Classroom / Lab</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Room Number / Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="room_number" placeholder="e.g. LH-101 or CS-LAB-1" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Facility Type</label>
+                            <select class="form-select" name="room_type">
+                                <option value="Classroom" selected>Classroom (Theory)</option>
+                                <option value="Lab">Laboratory (Practical)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Seating Capacity <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="capacity" value="70" min="1" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Building Location</label>
+                        <input type="text" class="form-control" name="building" placeholder="e.g. Main Academic Block">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Room</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

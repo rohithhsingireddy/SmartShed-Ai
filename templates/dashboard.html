@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SmartShed AI{% endblock %}
+{% block page_title %}Dashboard & Analytics{% endblock %}
+
+{% block content %}
+<!-- Quick Stats Cards Row -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary-subtle text-primary">
+                <i class="bi bi-person-badge"></i>
+            </div>
+            <div class="stat-val">{{ stats.faculty_count }}</div>
+            <div class="stat-label">Faculty Members</div>
+            <div class="text-muted small mt-2">
+                <a href="{{ url_for('faculty_list') }}" class="text-primary text-decoration-none">Manage Faculty &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-success-subtle text-success">
+                <i class="bi bi-journal-bookmark"></i>
+            </div>
+            <div class="stat-val">{{ stats.subject_count }}</div>
+            <div class="stat-label">Subjects ({{ stats.theory_count }} Th / {{ stats.lab_count }} Lab)</div>
+            <div class="text-muted small mt-2">
+                <a href="{{ url_for('subjects_list') }}" class="text-success text-decoration-none">Manage Subjects &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-warning-subtle text-warning">
+                <i class="bi bi-building"></i>
+            </div>
+            <div class="stat-val">{{ stats.room_count }}</div>
+            <div class="stat-label">Rooms ({{ stats.classroom_count }} Cls / {{ stats.lab_room_count }} Labs)</div>
+            <div class="text-muted small mt-2">
+                <a href="{{ url_for('classrooms_list') }}" class="text-warning text-decoration-none">Manage Rooms &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-info-subtle text-info">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-val">{{ stats.section_count }}</div>
+            <div class="stat-label">Student Sections</div>
+            <div class="text-muted small mt-2">
+                <a href="{{ url_for('sections_list') }}" class="text-info text-decoration-none">Manage Sections &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timetable Status & Quick Actions Banner -->
+<div class="custom-card mb-4">
+    <div class="card-body p-4">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <h4 class="fw-bold mb-0">Timetable Generation Engine</h4>
+                    {% if stats.timetable_count > 0 %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                            <i class="bi bi-check-circle-fill me-1"></i> Active ({{ stats.timetable_count }} Slots Scheduled)
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 rounded-pill">
+                            <i class="bi bi-clock-history me-1"></i> Not Generated Yet
+                        </span>
+                    {% endif %}
+                </div>
+                <p class="text-secondary mb-3">
+                    SmartShed AI uses pure Python Constraint Satisfaction & Backtracking with MRV heuristics to generate conflict-free schedules satisfying faculty availability, room capacity, and multi-period lab blocks.
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('generate_timetable_route') }}" class="btn btn-primary fw-semibold px-3 py-2">
+                        <i class="bi bi-cpu me-2"></i>Generate Timetable Now
+                    </a>
+                    {% if stats.timetable_count > 0 %}
+                        <a href="{{ url_for('view_timetable') }}" class="btn btn-outline-primary fw-semibold px-3 py-2">
+                            <i class="bi bi-table me-2"></i>View Timetable Grid
+                        </a>
+                        <a href="{{ url_for('clear_timetable_route') }}" class="btn btn-outline-danger px-3 py-2" onclick="return confirm('Are you sure you want to clear the current timetable?');">
+                            <i class="bi bi-trash me-1"></i>Clear Timetable
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-4 text-center mt-3 mt-lg-0">
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="text-muted small fw-semibold uppercase mb-1">Configuration Matrix</div>
+                    <div class="fw-bold text-dark fs-5">{{ days|length }} Days &bull; {{ periods|length }} Periods / Day</div>
+                    <div class="text-secondary small mt-1">Total weekly capacity: {{ (days|length * periods|length) }} slots/section</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Overview Tables Row -->
+<div class="row g-4">
+    <!-- Sections Overview -->
+    <div class="col-lg-6">
+        <div class="custom-card h-100">
+            <div class="card-header-custom">
+                <h5 class="card-title-custom">
+                    <i class="bi bi-people text-primary"></i> Academic Sections
+                </h5>
+                <a href="{{ url_for('sections_list') }}" class="btn btn-sm btn-light border">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Section</th>
+                                <th>Year & Branch</th>
+                                <th>Strength</th>
+                                <th>Timetable</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sec in sections_summary %}
+                                <tr>
+                                    <td class="fw-bold text-dark">{{ sec.section_name }}</td>
+                                    <td>{{ sec.year }} - {{ sec.branch }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ sec.student_strength }} Students</span></td>
+                                    <td>
+                                        <a href="{{ url_for('view_timetable', section_id=sec.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No sections registered yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Faculty Overview -->
+    <div class="col-lg-6">
+        <div class="custom-card h-100">
+            <div class="card-header-custom">
+                <h5 class="card-title-custom">
+                    <i class="bi bi-person-badge text-success"></i> Faculty Members
+                </h5>
+                <a href="{{ url_for('faculty_list') }}" class="btn btn-sm btn-light border">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>Availability</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fac in faculty_summary %}
+                                <tr>
+                                    <td class="fw-semibold text-dark">{{ fac.name }}</td>
+                                    <td><span class="badge bg-light text-secondary border">{{ fac.department }}</span></td>
+                                    <td>
+                                        <a href="{{ url_for('faculty_availability_edit', faculty_id=fac.id) }}" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-calendar-check"></i> Edit Slots
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted">No faculty members registered yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Availability - {{ faculty.name }} - SmartShed AI{% endblock %}
+{% block page_title %}Faculty Availability Matrix{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('faculty_list') }}" class="btn btn-outline-secondary btn-sm mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Back to Faculty List
+    </a>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-1">{{ faculty.name }}</h4>
+            <div class="text-muted small">
+                Department: <span class="fw-semibold text-dark">{{ faculty.department }}</span> | Email: {{ faculty.email or 'N/A' }}
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                <i class="bi bi-check-circle-fill me-1"></i> Available Slot
+            </span>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                <i class="bi bi-x-circle-fill me-1"></i> Unavailable Slot
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="custom-card">
+    <div class="card-header-custom">
+        <h5 class="card-title-custom">
+            <i class="bi bi-grid-3x3-gap-fill text-primary"></i> Weekly Period Availability Grid
+        </h5>
+        <div class="text-muted small">Click any slot to toggle availability state, then click "Save Availability".</div>
+    </div>
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('faculty_availability_save', faculty_id=faculty.id) }}">
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered text-center align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 140px;">Day / Period</th>
+                            {% for p in periods %}
+                                <th>
+                                    <div>Period {{ p }}</div>
+                                    <div class="text-muted small" style="font-size: 0.7rem; font-weight: normal;">
+                                        {{ period_timings.get(p, '') }}
+                                    </div>
+                                </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for day in days %}
+                            <tr>
+                                <td class="fw-bold bg-light text-start ps-3">{{ day }}</td>
+                                {% for p in periods %}
+                                    {% set is_avail = avail_map.get((day, p), 1) %}
+                                    <td class="p-2">
+                                        <input type="hidden" name="slot_{{ day }}_{{ p }}" id="input_{{ day }}_{{ p }}" value="{{ 1 if is_avail else 0 }}">
+                                        <button type="button" 
+                                                class="avail-cell-btn {{ 'available' if is_avail else 'unavailable' }} w-100 py-2" 
+                                                id="btn_{{ day }}_{{ p }}"
+                                                onclick="toggleAvailability('{{ day }}', {{ p }})">
+                                            <span id="label_{{ day }}_{{ p }}">{{ 'Available' if is_avail else 'Busy' }}</span>
+                                        </button>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="setAllAvailability(1)">
+                        <i class="bi bi-check-all me-1"></i> Mark All Available
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="setAllAvailability(0)">
+                        <i class="bi bi-x-circle me-1"></i> Mark All Busy
+                    </button>
+                </div>
+                <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+                    <i class="bi bi-save me-1"></i> Save Availability Settings
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleAvailability(day, period) {
+    const input = document.getElementById(`input_${day}_${period}`);
+    const btn = document.getElementById(`btn_${day}_${period}`);
+    const label = document.getElementById(`label_${day}_${period}`);
+    
+    if (input.value === "1") {
+        input.value = "0";
+        btn.classList.remove("available");
+        btn.classList.add("unavailable");
+        label.textContent = "Busy";
+    } else {
+        input.value = "1";
+        btn.classList.remove("unavailable");
+        btn.classList.add("available");
+        label.textContent = "Available";
+    }
+}
+
+function setAllAvailability(state) {
+    const inputs = document.querySelectorAll('input[name^="slot_"]');
+    inputs.forEach(input => {
+        const parts = input.id.replace('input_', '').split('_');
+        const day = parts[0];
+        const period = parts[1];
+        const btn = document.getElementById(`btn_${day}_${period}`);
+        const label = document.getElementById(`label_${day}_${period}`);
+        
+        input.value = state.toString();
+        if (state === 1) {
+            btn.classList.remove("unavailable");
+            btn.classList.add("available");
+            label.textContent = "Available";
+        } else {
+            btn.classList.remove("available");
+            btn.classList.add("unavailable");
+            label.textContent = "Busy";
+        }
+    });
+}
+</script>
+{% endblock %}
